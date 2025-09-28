@@ -5,84 +5,94 @@
 #include <string>
 #include <random>
 #include <ctime>
-#include <locale>
-#include <codecvt>
+#include <nlohmann/json.hpp>
+#include <Windows.h>
+#include "source/utf8.h" 
 
-std::map<wchar_t, std::vector<std::wstring>> homophonicTable = {
-    {L'А', {L"73", L"77", L"93", L"88"}}, {L'а', {L"73", L"77", L"93", L"88"}},
-    {L'Б', {L"37", L"02"}}, {L'б', {L"37", L"02"}},
-    {L'В', {L"20", L"56", L"97", L"31"}}, {L'в', {L"20", L"56", L"97", L"31"}},
-    {L'Г', {L"98", L"89"}}, {L'г', {L"98", L"89"}},
-    {L'Ґ', {L"18"}}, {L'ґ', {L"18"}},
-    {L'Д', {L"70", L"11", L"99"}}, {L'д', {L"70", L"11", L"99"}},
-    {L'Е', {L"28", L"66", L"33", L"46"}}, {L'е', {L"28", L"66", L"33", L"46"}},
-    {L'Є', {L"94"}}, {L'є', {L"94"}},
-    {L'Ж', {L"43"}}, {L'ж', {L"43"}},
-    {L'З', {L"26", L"79"}}, {L'з', {L"26", L"79"}},
-    {L'И', {L"64", L"19", L"36", L"29", L"52", L"83"}}, {L'и', {L"64", L"19", L"36", L"29", L"52", L"83"}},
-    {L'І', {L"45", L"75", L"27", L"23"}}, {L'і', {L"45", L"75", L"27", L"23"}},
-    {L'Ї', {L"71"}}, {L'ї', {L"71"}},
-    {L'Й', {L"96"}}, {L'й', {L"96"}},
-    {L'К', {L"63", L"54", L"39", L"50"}}, {L'к', {L"63", L"54", L"39", L"50"}},
-    {L'Л', {L"58", L"47", L"55"}}, {L'л', {L"58", L"47", L"55"}},
-    {L'М', {L"22", L"59", L"80"}}, {L'м', {L"22", L"59", L"80"}},
-    {L'Н', {L"32", L"17", L"67", L"40", L"74", L"53"}}, {L'н', {L"32", L"17", L"67", L"40", L"74", L"53"}},
-    {L'О', {L"38", L"91", L"05", L"07", L"14", L"60", L"41"}}, {L'о', {L"38", L"91", L"05", L"07", L"14", L"60", L"41"}},
-    {L'П', {L"25", L"86"}}, {L'п', {L"25", L"86"}},
-    {L'Р', {L"72", L"92", L"82"}}, {L'р', {L"72", L"92", L"82"}},
-    {L'С', {L"09", L"03", L"06", L"87"}}, {L'с', {L"09", L"03", L"06", L"87"}},
-    {L'Т', {L"35", L"01", L"08", L"49"}}, {L'т', {L"35", L"01", L"08", L"49"}},
-    {L'У', {L"12", L"78", L"04"}}, {L'у', {L"12", L"78", L"04"}},
-    {L'Ф', {L"42"}}, {L'ф', {L"42"}},
-    {L'Х', {L"57"}}, {L'х', {L"57"}},
-    {L'Ц', {L"65"}}, {L'ц', {L"65"}},
-    {L'Ч', {L"84"}}, {L'ч', {L"84"}},
-    {L'Ш', {L"16"}}, {L'ш', {L"16"}},
-    {L'Щ', {L"95"}}, {L'щ', {L"95"}},
-    {L'Ь', {L"85", L"10"}}, {L'ь', {L"85", L"10"}},
-    {L'Ю', {L"62"}}, {L'ю', {L"62"}},
-    {L'Я', {L"24", L"90"}}, {L'я', {L"24", L"90"}},
-    {L' ', {L"21", L"30", L"51", L"81", L"68", L"34", L"15", L"13", L"76", L"44", L"69", L"48", L"61"}}
+using json = nlohmann::ordered_json;
+
+std::unordered_map<std::string, std::vector<std::string>> homophonicTable = {
+    { "А", {"173", "177", "193", "188"}}, { "а", {"273", "277", "293", "288"}},
+    { "Б", {"137", "102"} }, { "б", {"237", "202"} },
+    { "В", {"120", "156", "197", "131"} }, { "в", {"220", "256", "297", "231"} },
+    { "Г", {"198", "189"} }, { "г", {"298", "289"} },
+    { "Ґ", {"118"} }, { "ґ", {"218"} },
+    { "Д", {"170", "111", "199"} }, { "д", {"270", "211", "299"} },
+    { "Е", {"128", "166", "133", "146"} }, { "е", {"228", "266", "233", "246"} },
+    { "Є", {"194"} }, { "є", {"294"} },
+    { "Ж", {"143"} }, { "ж", {"243"} },
+    { "З", {"126", "179"} }, { "з", {"226", "279"} },
+    { "И", {"164", "119", "136", "129", "152", "183"} }, { "и", {"264", "219", "236", "229", "252", "283"} },
+    { "І", {"145", "175", "127", "123"} }, { "і", {"245", "275", "227", "223"} },
+    { "Ї", {"171"} }, { "ї", {"271"} },
+    { "Й", {"196"} }, { "й", {"296"} },
+    { "К", {"163", "154", "139", "150"} }, { "к", {"263", "254", "239", "250"} },
+    { "Л", {"158", "147", "155"} }, { "л", {"258", "247", "255"} },
+    { "М", {"122", "159", "180"} }, { "м", {"222", "259", "280"} },
+    { "Н", {"132", "117", "167", "140", "174", "153"} }, { "н", {"232", "217", "267", "240", "274", "253"} },
+    { "О", {"138", "191", "105", "107", "114", "160", "141"} }, { "о", {"238", "291", "205", "207", "214", "260", "241"} },
+    { "П", {"125", "186"} }, { "п", {"225", "286"} },
+    { "Р", {"172", "192", "182"} }, { "р", {"272", "292", "282"} },
+    { "С", {"109", "103", "106", "187"} }, { "с", {"209", "203", "206", "287"} },
+    { "Т", {"135", "101", "108", "149"} }, { "т", {"235", "201", "208", "249"} },
+    { "У", {"112", "178", "104"} }, { "у", {"212", "278", "204"} },
+    { "Ф", {"142"} }, { "ф", {"242"} },
+    { "Х", {"157"} }, { "х", {"257"} },
+    { "Ц", {"165"} }, { "ц", {"265"} },
+    { "Ч", {"184"} }, { "ч", {"284"} },
+    { "Ш", {"116"} }, { "ш", {"216"} },
+    { "Щ", {"195"} }, { "щ", {"295"} },
+    { "Ь", {"185", "110"} }, { "ь", {"285", "210"} },
+    { "Ю", {"162"} }, { "ю", {"262"} },
+    { "Я", {"124", "190"} }, { "я", {"224", "290"} },
+    { " ", {"321", "330", "351", "381", "368", "334", "315", "313", "376", "344", "369", "348", "361"} }
 };
 
-
-std::wstring encrypt(const std::wstring& text) {
-    std::wstring result;
+std::string encrypt(const std::string& text) {
+    std::string result;
     std::mt19937 gen(static_cast<unsigned>(time(nullptr)));
 
-    for (wchar_t ch : text) {
-        auto it = homophonicTable.find(ch);
-        if (it != homophonicTable.end()) {
-            const auto& codes = it->second;
+    using it_t = utf8::iterator<std::string::const_iterator>;
+    it_t it(text.begin(), text.begin(), text.end());
+    it_t end(text.end(), text.begin(), text.end());
+
+    for (; it != end; ++it) {
+        char32_t cp = *it;
+
+        std::string ch;
+        utf8::append(cp, std::back_inserter(ch));
+
+        auto found = homophonicTable.find(ch);
+        if (found != homophonicTable.end()) {
+            const auto& codes = found->second;
             std::uniform_int_distribution<> dist(0, codes.size() - 1);
-            result += codes[dist(gen)]; 
+            result += codes[dist(gen)];
         }
     }
-
     return result;
 }
 
 int main() {
-    std::locale::global(std::locale(""));
+    SetConsoleOutputCP(CP_UTF8);
+    json j = homophonicTable;
+    std::ofstream f("table.json");
+    f << j.dump(2);
+    f.close();
 
-    std::wifstream fin("open_text.txt");
-    fin.imbue(std::locale(fin.getloc(), new std::codecvt_utf8<wchar_t>));
-
+    std::ifstream fin("open_text.txt", std::ios::binary);
     if (!fin) {
-        std::wcerr << L"Не вдалось відкрити файл open_text.txt" << std::endl;
+        std::cerr << "Не вдалось відкрити файл open_text.txt\n";
         return 1;
     }
-
-    std::wstring openText((std::istreambuf_iterator<wchar_t>(fin)), std::istreambuf_iterator<wchar_t>());
+    std::string openText((std::istreambuf_iterator<char>(fin)), {});
     fin.close();
 
-    std::wstring cipher = encrypt(openText);
+    std::string cipher = encrypt(openText);
 
-    std::wofstream fout("cipher_text.txt");
-    fout.imbue(std::locale(fout.getloc(), new std::codecvt_utf8<wchar_t>));
+    std::ofstream fout("cipher_text.txt", std::ios::binary);
     fout << cipher;
     fout.close();
 
-    std::wcout << L"Шифрування завершено. Результат записано у cipher_text.txt" << std::endl;
+    std::cout << "Шифрування завершено. Результат записано у cipher_text.txt\n";
     return 0;
 }
